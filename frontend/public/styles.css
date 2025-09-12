@@ -668,6 +668,180 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #FF6B35
     }
 }
 
+/* Enhanced Manufacturer Form Styles */
+.featured-field {
+    background: linear-gradient(135deg, #fff5f2 0%, #ffeee8 100%);
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid #FF6B35;
+    margin-bottom: 25px;
+}
+
+.featured-field label {
+    font-size: 18px;
+    color: #003366;
+    margin-bottom: 12px;
+}
+
+.featured-field select {
+    font-size: 16px;
+    padding: 15px;
+    border: 2px solid #FF6B35;
+    border-radius: 8px;
+    background: white;
+}
+
+.field-hint {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* ID Preview Styles */
+.id-preview {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f9ff 100%);
+    border: 2px solid #28a745;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    animation: slideInUp 0.3s ease-out;
+}
+
+.preview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    color: #155724;
+}
+
+.preview-content {
+    text-align: center;
+}
+
+.preview-id {
+    font-size: 24px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    color: #003366;
+    background: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: inline-block;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.preview-breakdown {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.breakdown-item {
+    background: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+/* Specifications Panel */
+.specs-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border-left: 4px solid #FF6B35;
+    margin-top: 20px;
+}
+
+.specs-header {
+    margin-bottom: 15px;
+}
+
+.specs-header h4 {
+    color: #003366;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.specs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.spec-item {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.spec-item strong {
+    color: #003366;
+}
+
+/* Form Enhancements */
+input[readonly] {
+    background: #f8f9fa !important;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Animation */
+@keyframes slideInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive Design for Manufacturer Form */
+@media (max-width: 768px) {
+    .preview-breakdown {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .specs-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .preview-id {
+        font-size: 18px;
+        padding: 10px 15px;
+    }
+    
+    .featured-field {
+        padding: 15px;
+    }
+    
+    .featured-field select {
+        font-size: 14px;
+        padding: 12px;
+    }
+}
+
 /* Responsive Scanner */
 @media (max-width: 768px) {
     .scanner-tools {

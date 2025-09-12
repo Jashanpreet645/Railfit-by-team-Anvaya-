@@ -126,59 +126,146 @@ class RailwayQRApp {
         }
     }
 
+    // ID Generation Logic
+    generatePartID(partType, userNumber) {
+        const year = new Date().getFullYear();
+        const prefixMap = {
+            'elastic_rail_clip': 'ER',
+            'rail_pad': 'RP',
+            'liner': 'LI',
+            'sleeper': 'SL'
+        };
+        
+        const prefix = prefixMap[partType] || 'XX';
+        const paddedNumber = String(userNumber).padStart(4, '0');
+        return `${prefix}-${year}-${paddedNumber}`;
+    }
+
     loadPartsSpecifications() {
         try {
             const typeSelect = document.getElementById('mfg-item-type');
+            const userNumberInput = document.getElementById('mfg-user-number');
+            const idInput = document.getElementById('mfg-item-id');
+            const preview = document.getElementById('id-preview');
+            
             if (!typeSelect || typeSelect._bound) return;
-            // Optionally create a simple panel to display specs beneath the form
-            let panel = document.getElementById('mfg-specs-panel');
-            if (!panel) {
-                const form = document.getElementById('qr-generator-form');
-                if (form && form.parentElement) {
-                    panel = document.createElement('div');
-                    panel.id = 'mfg-specs-panel';
-                    panel.className = 'specs-panel';
-                    panel.style.marginTop = '12px';
-                    form.parentElement.appendChild(panel);
+            
+            const partSpecifications = {
+                'elastic_rail_clip': {
+                    material: 'High Carbon Steel',
+                    grade: 'Grade 60 Steel',
+                    serviceLife: '25 years',
+                    standard: 'IRS-T-12'
+                },
+                'rail_pad': {
+                    material: 'EPDM Rubber',
+                    grade: 'Shore A 65±5',
+                    serviceLife: '15 years',
+                    standard: 'IRS-T-18'
+                },
+                'liner': {
+                    material: 'Cast Iron/Nylon',
+                    grade: 'Grade 250',
+                    serviceLife: '20 years',
+                    standard: 'IRS-T-28'
+                },
+                'sleeper': {
+                    material: 'Pre-stressed Concrete',
+                    grade: 'M-50 Grade Concrete',
+                    serviceLife: '50 years',
+                    standard: 'IRS-T-52'
                 }
-            }
-            const renderSpecs = (specs) => {
-                if (!panel) return;
-                if (!specs) { panel.innerHTML = ''; return; }
-                const s = specs;
-                panel.innerHTML = `
-                    <div class="tool-card">
-                        <h4>Part Specifications</h4>
-                        <div class="details-grid">
-                            <div><strong>Material:</strong> ${s.material || '-'}</div>
-                            <div><strong>Grade:</strong> ${s.material_grade || '-'}</div>
-                            <div><strong>Service Life (yrs):</strong> ${s.service_life_years ?? '-'}</div>
-                            <div><strong>Load Capacity (kN):</strong> ${s.load_capacity_kn ?? '-'}</div>
-                            <div><strong>RDSO Spec:</strong> ${s.rdso_specification || '-'}</div>
-                            <div><strong>Maintenance Interval (months):</strong> ${s.maintenance_interval_months ?? '-'}</div>
-                        </div>
-                    </div>`;
             };
-            typeSelect.addEventListener('change', async () => {
+            
+            // Function to update ID and preview
+            const updateIDAndPreview = () => {
                 const partType = typeSelect.value;
-                if (!partType) { renderSpecs(null); return; }
-                try {
-                    const res = await fetch(`${this.apiBase}/parts/specifications/${partType}`);
-                    const data = await res.json();
-                    if (data && data.success) {
-                        renderSpecs(data.specifications);
-                    } else {
-                        renderSpecs(null);
+                const userNumber = userNumberInput.value;
+                
+                if (partType && userNumber) {
+                    const generatedID = this.generatePartID(partType, userNumber);
+                    idInput.value = generatedID;
+                    
+                    // Update preview
+                    const previewElement = document.querySelector('.preview-id');
+                    const prefixElement = document.querySelector('.prefix-part');
+                    const yearElement = document.querySelector('.year-part');
+                    const numberElement = document.querySelector('.number-part');
+                    
+                    if (previewElement) {
+                        previewElement.textContent = generatedID;
+                        const parts = generatedID.split('-');
+                        if (prefixElement) prefixElement.textContent = parts[0];
+                        if (yearElement) yearElement.textContent = parts[1];
+                        if (numberElement) numberElement.textContent = parts[2];
                     }
-                } catch (e) {
-                    console.warn('Failed to load part specifications:', e);
-                    renderSpecs(null);
+                    
+                    preview.style.display = 'block';
+                } else {
+                    idInput.value = '';
+                    preview.style.display = 'none';
                 }
+            };
+            
+            // Add event listeners
+            typeSelect.addEventListener('change', () => {
+                updateIDAndPreview();
+                this.renderSpecifications(typeSelect.value, partSpecifications);
             });
+            
+            userNumberInput.addEventListener('input', updateIDAndPreview);
+            
             typeSelect._bound = true;
-        } catch (e) {
-            console.warn('loadPartsSpecifications error:', e);
+            
+        } catch (error) {
+            console.error('Error setting up parts specifications:', error);
         }
+    }
+
+    renderSpecifications(partType, specifications) {
+        let panel = document.getElementById('mfg-specs-panel');
+        if (!panel) {
+            const form = document.getElementById('qr-generator-form');
+            if (form && form.parentElement) {
+                panel = document.createElement('div');
+                panel.id = 'mfg-specs-panel';
+                panel.className = 'specs-panel';
+                panel.style.marginTop = '20px';
+                form.parentElement.appendChild(panel);
+            }
+        }
+        
+        if (!panel) return;
+        
+        if (!partType || !specifications[partType]) {
+            panel.innerHTML = '';
+            return;
+        }
+        
+        const specs = specifications[partType];
+        const displayName = partType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        
+        panel.innerHTML = `
+            <div class="specs-card">
+                <div class="specs-header">
+                    <h4><i class="fas fa-info-circle"></i> ${displayName} Specifications</h4>
+                </div>
+                <div class="specs-grid">
+                    <div class="spec-item">
+                        <strong>Material:</strong> ${specs.material}
+                    </div>
+                    <div class="spec-item">
+                        <strong>Grade:</strong> ${specs.grade}
+                    </div>
+                    <div class="spec-item">
+                        <strong>Service Life:</strong> ${specs.serviceLife}
+                    </div>
+                    <div class="spec-item">
+                        <strong>Standard:</strong> ${specs.standard}
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     updateUserInfo(user) { const el = document.getElementById('user-name'); if (el) el.textContent = user.name; }
@@ -190,24 +277,66 @@ class RailwayQRApp {
     async handleQRGeneration(event) {
         event.preventDefault();
         const formData = new FormData(event.target);
-        const itemData = Object.fromEntries(formData.entries());
+        const qrData = {
+            item_id: formData.get('item_id'),
+            item_type: formData.get('item_type'),
+            vendor_lot: formData.get('vendor_lot'),
+            supply_date: formData.get('supply_date'),
+            warranty_period: formData.get('warranty_period'),
+            manufacturer: formData.get('manufacturer'),
+            user_number: formData.get('user_number')
+        };
+        
+        // Validate required fields
+        if (!qrData.item_type) {
+            alert('Please select a part type');
+            return;
+        }
+        
+        if (!qrData.user_number) {
+            alert('Please enter your identification number');
+            return;
+        }
+        
+        if (!qrData.item_id) {
+            alert('Item ID was not generated properly. Please check your selections.');
+            return;
+        }
+        
+        if (!qrData.vendor_lot || !qrData.supply_date) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
         try {
-            const res = await fetch(`${this.apiBase}/manufacturer/generate-qr`, {
+            const response = await fetch(`${this.apiBase}/manufacturer/generate-qr`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.authToken}`
+                    'Authorization': `Bearer ${this.authToken}`,
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(itemData)
+                body: JSON.stringify(qrData)
             });
-            const result = await res.json();
+            
+            const result = await response.json();
+            
             if (result.success) {
-                this.displayGeneratedQR(result);
-                event.target.reset();
-            } else { alert('QR generation failed: ' + (result.error || 'Unknown error')); }
-        } catch (e) {
-            console.error('QR generation error:', e);
-            alert('QR generation failed. Please try again.');
+                document.getElementById('qr-image').src = `data:image/png;base64,${result.qr_image}`;
+                document.getElementById('qr-reference').textContent = result.qr_ref;
+                document.getElementById('qr-result').style.display = 'block';
+                
+                // Store for download
+                this.currentQR = {
+                    ref: result.qr_ref,
+                    image: result.qr_image,
+                    filename: result.filename
+                };
+            } else {
+                alert(result.error || 'Failed to generate QR code');
+            }
+        } catch (error) {
+            console.error('QR generation error:', error);
+            alert('Failed to generate QR code. Please try again.');
         }
     }
 

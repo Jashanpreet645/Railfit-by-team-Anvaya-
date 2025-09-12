@@ -133,48 +133,63 @@
                 <div class="dashboard-header">
                     <div class="dashboard-icon">🏭</div>
                     <h2>Manufacturer Dashboard</h2>
-                    <p>Generate QR codes for manufactured railway parts with advanced specifications</p>
+                    <p>Generate QR codes for manufactured railway parts with auto-generated Item IDs</p>
                 </div>
 
                 <div class="dashboard-grid">
                     <div class="tool-card primary-tool">
                         <div class="tool-header">
                             <h3><i class="fas fa-qrcode"></i> Generate QR Code</h3>
-                            <p>Create laser-ready QR codes for track fittings</p>
+                            <p>Create laser-ready QR codes for track fittings with smart ID generation</p>
                         </div>
 
                         <form id="qr-generator-form">
+                            <!-- Part Type Selection (Primary Field) -->
+                            <div class="form-group featured-field">
+                                <label for="mfg-item-type">
+                                    <i class="fas fa-cog"></i> Select Part Type *
+                                </label>
+                                <select id="mfg-item-type" name="item_type" required>
+                                    <option value="">Choose part type to generate ID</option>
+                                    <option value="elastic_rail_clip">Elastic Rail Clip</option>
+                                    <option value="rail_pad">Rail Pad</option>
+                                    <option value="liner">Liner</option>
+                                    <option value="sleeper">Sleeper</option>
+                                </select>
+                            </div>
+
                             <div class="form-row">
+                                <!-- User Number Input -->
+                                <div class="form-group">
+                                    <label for="mfg-user-number">
+                                        <i class="fas fa-hashtag"></i> Your Number *
+                                    </label>
+                                    <input type="number" id="mfg-user-number" name="user_number" 
+                                           required placeholder="e.g., 1234" min="1" max="9999">
+                                    <small class="field-hint">Enter 1-4 digit number for unique identification</small>
+                                </div>
+                                
+                                <!-- Auto-Generated Item ID (Read-only) -->
                                 <div class="form-group">
                                     <label for="mfg-item-id">
-                                        <i class="fas fa-barcode"></i> Item ID
+                                        <i class="fas fa-barcode"></i> Auto-Generated Item ID
                                     </label>
-                                    <input type="text" id="mfg-item-id" name="item_id" required placeholder="e.g., EC-2025-001234">
-                                </div>
-                                <div class="form-group">
-                                    <label for="mfg-item-type">
-                                        <i class="fas fa-cog"></i> Item Type
-                                    </label>
-                                    <select id="mfg-item-type" name="item_type" required>
-                                        <option value="">Select part type</option>
-                                        <option value="elastic_rail_clip">Elastic Rail Clip</option>
-                                        <option value="rail_pad">Rail Pad</option>
-                                        <option value="liner">Liner</option>
-                                        <option value="sleeper">Sleeper</option>
-                                    </select>
+                                    <input type="text" id="mfg-item-id" name="item_id" readonly 
+                                           placeholder="Select part type and enter number">
+                                    <small class="field-hint">Automatically generated based on your selections</small>
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="mfg-vendor-lot">
-                                        <i class="fas fa-box"></i> Vendor Lot
+                                        <i class="fas fa-box"></i> Vendor Lot *
                                     </label>
                                     <input type="text" id="mfg-vendor-lot" name="vendor_lot" required placeholder="e.g., VL2025001">
                                 </div>
                                 <div class="form-group">
                                     <label for="mfg-supply-date">
-                                        <i class="fas fa-calendar"></i> Supply Date
+                                        <i class="fas fa-calendar"></i> Supply Date *
                                     </label>
                                     <input type="date" id="mfg-supply-date" name="supply_date" required>
                                 </div>
@@ -199,6 +214,27 @@
                                 <i class="fas fa-magic"></i> Generate QR Code
                             </button>
                         </form>
+
+                        <!-- ID Generation Preview -->
+                        <div id="id-preview" class="id-preview" style="display: none;">
+                            <div class="preview-header">
+                                <h4><i class="fas fa-eye"></i> ID Preview</h4>
+                            </div>
+                            <div class="preview-content">
+                                <span class="preview-id"></span>
+                                <div class="preview-breakdown">
+                                    <span class="breakdown-item">
+                                        <strong>Prefix:</strong> <span class="prefix-part"></span>
+                                    </span>
+                                    <span class="breakdown-item">
+                                        <strong>Year:</strong> <span class="year-part"></span>
+                                    </span>
+                                    <span class="breakdown-item">
+                                        <strong>Number:</strong> <span class="number-part"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
 
                         <div id="qr-result" class="qr-result" style="display: none;">
                             <div class="result-header">
