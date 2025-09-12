@@ -15,19 +15,99 @@ body { font-family: 'Open Sans', Arial, sans-serif; line-height: 1.6; color: #33
     box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
 }
 .header-container { 
-    max-width: 1200px; 
+    max-width: 1400px; 
     margin: 0 auto; 
     display: flex; 
-    justify-content: space-between; 
     align-items: center; 
-    padding: 0 20px; 
+    padding: 15px 30px; 
     position: relative;
+    gap: 30px;
 }
-.logo-section { display: flex; align-items: center; gap: 20px; }
+
+.logo-section { 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+    flex: 1;
+}
+
 .ir-logo { height: 60px; width: auto; }
-.logo-text h1 { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
-.logo-text h2 { font-size: 18px; font-weight: 600; margin-bottom: 5px; }
-.logo-text p { font-size: 14px; opacity: 0.9; }
+
+.logo-text h1 { 
+    font-size: 24px; 
+    font-weight: 700; 
+    margin-bottom: 5px; 
+    line-height: 1.2;
+}
+
+.logo-text h2 { 
+    font-size: 18px; 
+    font-weight: 600; 
+    margin-bottom: 5px; 
+    line-height: 1.2;
+}
+
+.logo-text p { 
+    font-size: 14px; 
+    opacity: 0.9; 
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* Circular Logo Space */
+.logo-container {
+    display: flex;
+    align-items: center;
+    margin-right: 20px;
+}
+
+.logo-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.logo-circle:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Logo Image Styles */
+.logo-image {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+/* Logo Link Styles */
+.logo-link {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+}
+
+.logo-link:hover {
+    color: white;
+    text-decoration: none;
+}
 
 /* Navigation */
 .ir-nav { 
@@ -45,6 +125,7 @@ body { font-family: 'Open Sans', Arial, sans-serif; line-height: 1.6; color: #33
 header nav {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .nav-menu { 
@@ -52,26 +133,83 @@ header nav {
     display: flex; 
     margin: 0; 
     padding: 0; 
-    gap: 30px;
+    gap: 5px;
+    align-items: center;
 }
-.nav-menu li { margin: 0; }
+
+.nav-menu li { 
+    margin: 0; 
+}
+
 .nav-menu a { 
     color: white; 
     text-decoration: none; 
-    padding: 10px 15px; 
+    padding: 12px 20px; 
     display: block; 
     font-weight: 600; 
-    transition: all 0.3s;
-    border-radius: 5px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    position: relative;
+    white-space: nowrap;
 }
+
 .nav-menu a:hover { 
-    color: #FF6B35; 
-    background: rgba(255, 255, 255, 0.1);
+    color: #003366; 
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
 .nav-menu a.active {
-    color: #FF6B35;
-    background: rgba(255, 255, 255, 0.1);
-    border-bottom: 2px solid #FF6B35;
+    color: #003366;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-weight: 700;
+}
+
+/* User Info Section */
+.user-info { 
+    display: flex; 
+    align-items: center; 
+    gap: 15px; 
+    margin-left: 20px; 
+    flex-shrink: 0;
+}
+
+.user-greeting { 
+    color: white; 
+    font-weight: 500; 
+    font-size: 14px; 
+    white-space: nowrap;
+}
+
+.username { 
+    font-weight: 600; 
+    color: #FF6B35; 
+}
+
+.logout-btn { 
+    background: rgba(255,255,255,0.15); 
+    color: white; 
+    border: 2px solid rgba(255,255,255,0.3); 
+    padding: 10px 18px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    transition: all 0.3s ease; 
+    font-size: 14px; 
+    font-weight: 600; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.logout-btn:hover { 
+    background: rgba(255,255,255,0.25); 
+    border-color: rgba(255,255,255,0.5);
+    transform: translateY(-2px); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
 }
 
 /* Main */
@@ -1625,6 +1763,56 @@ input[type="number"]::-webkit-inner-spin-button {
     
     header nav {
         display: none;
+    }
+    
+    .header-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+        padding: 15px 20px;
+    }
+    
+    .logo-section {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .logo-container {
+        margin-right: 0;
+        margin-bottom: 0;
+    }
+    
+    .logo-circle {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .logo-image {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .nav-menu {
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .nav-menu a {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+    
+    .user-info {
+        margin-left: 0;
+        margin-top: 10px;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .logout-btn {
+        padding: 8px 15px;
+        font-size: 13px;
     }
     
     .dashboard-header {
