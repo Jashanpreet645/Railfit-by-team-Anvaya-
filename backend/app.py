@@ -40,6 +40,77 @@ qr_scanner = StateOfTheArtQRScanner()
 # Initialize database
 init_db()
 
+# Add seed data if database is empty
+def add_seed_data():
+    try:
+        from utils.database import get_db_session
+        from models.railway_item import RailwayItem
+        from datetime import datetime
+        
+        session = get_db_session()
+        # Check if database is empty
+        item_count = session.query(RailwayItem).count()
+        if item_count == 0:
+            print("Adding seed data to database...")
+            # Add sample data
+            sample_items = [
+                {
+                    'item_id': 'EC-2025-001234',
+                    'qr_ref': 'demoabcd1234',
+                    'vendor_lot': 'VL2025001',
+                    'supply_date': datetime(2025, 1, 15),
+                    'warranty_period': '5 years',
+                    'item_type': 'elastic_rail_clip',
+                    'manufacturer': 'Railway Parts Manufacturer',
+                    'inspection_dates': ['2025-01-16', '2025-02-15'],
+                    'ai_insights': {'quality': 'excellent', 'maintenance_required': False},
+                    'quality_score': 85.0,
+                    'status': 'active'
+                },
+                {
+                    'item_id': 'RP-2025-002345',
+                    'qr_ref': 'demorfgh5678',
+                    'vendor_lot': 'VL2025002',
+                    'supply_date': datetime(2025, 1, 20),
+                    'warranty_period': '3 years',
+                    'item_type': 'rail_pad',
+                    'manufacturer': 'Track Components Ltd',
+                    'inspection_dates': ['2025-01-21'],
+                    'ai_insights': {'quality': 'good', 'maintenance_required': False},
+                    'quality_score': 78.0,
+                    'status': 'active'
+                },
+                {
+                    'item_id': 'LN-2025-003456',
+                    'qr_ref': 'demijkli9012',
+                    'vendor_lot': 'VL2025003',
+                    'supply_date': datetime(2025, 1, 25),
+                    'warranty_period': '4 years',
+                    'item_type': 'liner',
+                    'manufacturer': 'Railway Solutions Inc',
+                    'inspection_dates': [],
+                    'ai_insights': {'quality': 'excellent', 'maintenance_required': False},
+                    'quality_score': 92.0,
+                    'status': 'active'
+                }
+            ]
+            
+            for item_data in sample_items:
+                item = RailwayItem(**item_data)
+                session.add(item)
+            
+            session.commit()
+            print(f"Added {len(sample_items)} sample items to database")
+        else:
+            print(f"Database already contains {item_count} items")
+        
+        session.close()
+    except Exception as e:
+        print(f"Error adding seed data: {e}")
+
+# Add seed data
+add_seed_data()
+
 ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'bmp', 'tiff' }
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_UPLOAD_SIZE', str(16 * 1024 * 1024)))
 
@@ -237,15 +308,24 @@ def official_scan_qr():
 def vendor_search_parts():
     try:
         search_data = request.get_json() or {}
+        print(f"Vendor search request: {search_data}")
+        
+        # Get all items first to debug
+        all_items = db_service.list_items()
+        print(f"Total items in database: {len(all_items)}")
+        
         items = db_service.search_items({
             'item_type': search_data.get('part_type'),
             'vendor_lot': search_data.get('supplier'),
             'date_range': (search_data.get('date_from'), search_data.get('date_to'))
         })
+        print(f"Search results: {len(items)} items found")
+        
         udm_links = [{'item_id': i.item_id, 'link': f"https://ireps.gov.in/udm/item/{i.item_id}", 'status': 'Active'} for i in items]
         tms_links = [{'item_id': i.item_id, 'link': f"https://www.irecept.gov.in/tms/item/{i.item_id}", 'status': 'Tracked'} for i in items]
         return jsonify({'success': True, 'total_items': len(items), 'items': [i.to_dict() for i in items], 'udm_links': udm_links, 'tms_links': tms_links})
     except Exception as e:
+        print(f"Vendor search error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/vendor/parts-summary', methods=['POST'])
@@ -253,13 +333,17 @@ def vendor_search_parts():
 def vendor_parts_summary():
     try:
         data = request.get_json() or {}
+        print(f"Parts summary request: {data}")
         part_type = data.get('part_type')
         try:
             quantity = int(data.get('quantity', 0))
         except Exception:
             quantity = 0
 
+        print(f"Parsed: part_type={part_type}, quantity={quantity}")
+        
         if not part_type or quantity <= 0:
+            print(f"Validation failed: part_type={part_type}, quantity={quantity}")
             return jsonify({'success': False, 'message': 'Please provide valid part type and quantity'}), 400
 
         session = get_db_session()
@@ -275,6 +359,7 @@ def vendor_parts_summary():
                 .limit(quantity)
                 .all()
             )
+            print(f"Found {len(existing_parts)} parts of type {part_type}")
 
             if not existing_parts:
                 return jsonify({
@@ -417,11 +502,23 @@ def search_parts_specifications():
 @app.route('/api/lookup/<qr_ref>', methods=['GET'])
 def lookup_qr_ref(qr_ref):
     try:
+        print(f"Looking up QR ref: {qr_ref}")
+        
+        # Debug: List all items
+        all_items = db_service.list_items()
+        print(f"Total items in database: {len(all_items)}")
+        for item in all_items:
+            print(f"Item: {item.item_id}, QR: {item.qr_ref}")
+        
         item = db_service.get_item_by_qr_ref(qr_ref)
         if not item:
+            print(f"QR ref {qr_ref} not found in database")
             return jsonify({'success': False, 'error': 'Not found'}), 404
+        
+        print(f"Found item: {item.item_id}")
         return jsonify(item.to_dict())
     except Exception as e:
+        print(f"Lookup error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':

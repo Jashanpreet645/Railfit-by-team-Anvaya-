@@ -235,25 +235,30 @@ class RailwayQRApp {
         event.preventDefault();
         const formData = new FormData(event.target);
         const searchData = Object.fromEntries(formData.entries());
+        console.log('Vendor search data:', searchData);
         try {
             const res = await fetch(`${this.apiBase}/vendor/search-parts`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.authToken}` },
                 body: JSON.stringify(searchData)
             });
             const result = await res.json();
+            console.log('Vendor search result:', result);
             if (result.success) this.displaySearchResults(result); else alert('Search failed: ' + (result.error || 'Unknown'));
         } catch (e) { console.error('Search error:', e); alert('Search failed. Please try again.'); }
     }
 
     displaySearchResults(result) {
         const resultsDiv = document.getElementById('search-results');
-        const tableDiv = document.getElementById('results-table');
-        if (!tableDiv) return;
+        if (!resultsDiv) return;
+        
         if (result.total_items === 0) {
-            tableDiv.innerHTML = '<p>No parts found matching your criteria.</p>';
+            resultsDiv.innerHTML = '<div class="search-no-results"><p>No parts found matching your criteria.</p></div>';
         } else {
             let html = `
+                <div class="search-results-header">
                 <h5>Found ${result.total_items} parts</h5>
+                </div>
+                <div class="search-results-table">
                 <table class="results-table">
                     <thead>
                         <tr>
@@ -261,6 +266,8 @@ class RailwayQRApp {
                             <th>Type</th>
                             <th>Vendor Lot</th>
                             <th>Supply Date</th>
+                                <th>Manufacturer</th>
+                                <th>Quality Score</th>
                             <th>UDM Link</th>
                             <th>TMS Link</th>
                         </tr>
@@ -273,25 +280,29 @@ class RailwayQRApp {
                 html += `
                     <tr>
                         <td>${item.item_id}</td>
-                        <td>${item.item_type}</td>
+                        <td>${item.item_type.replace('_', ' ').toUpperCase()}</td>
                         <td>${item.vendor_lot}</td>
-                        <td>${item.supply_date}</td>
+                        <td>${item.supply_date ? new Date(item.supply_date).toLocaleDateString() : 'N/A'}</td>
+                        <td>${item.manufacturer || 'N/A'}</td>
+                        <td>${item.quality_score ? item.quality_score.toFixed(1) + '%' : 'N/A'}</td>
                         <td><a href="${udmLink.link}" target="_blank" class="btn-secondary">View UDM</a></td>
                         <td><a href="${tmsLink.link}" target="_blank" class="btn-secondary">View TMS</a></td>
                     </tr>`;
             });
-            html += '</tbody></table>';
-            tableDiv.innerHTML = html;
+            html += '</tbody></table></div>';
+            resultsDiv.innerHTML = html;
         }
-        if (resultsDiv) resultsDiv.style.display = 'block';
+        resultsDiv.style.display = 'block';
     }
 
     // Vendor: Summary
     async handlePartsSummary(event) {
         event.preventDefault();
         const formData = new FormData(event.target);
-        const partType = formData.get('summary_part_type');
-        const quantityVal = parseInt(formData.get('summary_quantity'), 10);
+        const partType = formData.get('part_type');
+        const quantityVal = parseInt(formData.get('quantity'), 10);
+        console.log('Parts summary data:', { partType, quantityVal });
+        
         if (!partType || !quantityVal || quantityVal <= 0) {
             alert('Please select a part type and enter a valid quantity');
             return;
@@ -303,7 +314,8 @@ class RailwayQRApp {
                 body: JSON.stringify({ part_type: partType, quantity: quantityVal })
             });
             const result = await res.json();
-            const summaryDiv = document.getElementById('summary-result');
+            console.log('Parts summary result:', result);
+            const summaryDiv = document.getElementById('parts-summary-result');
             if (!summaryDiv) return;
 
             if (!result.success) {
@@ -484,12 +496,38 @@ class RailwayQRApp {
     }
 
     maybeShowCameraContextWarning() {
-        const statusDiv = document.getElementById('scanner-status');
-        if (!statusDiv) return;
+        const scannerContainer = document.getElementById('webcam-scanner-container');
+        if (!scannerContainer) return;
         const origin = window.location.origin;
         const isLocal = /^(https?:\/\/)?(localhost|127\.0\.0\.1)/i.test(origin);
         if (!window.isSecureContext && !isLocal) {
-            statusDiv.innerHTML = '<div class="scanner-error"><span class="error-icon">⚠️</span><span>Camera is blocked on insecure origins. Use http://127.0.0.1:5000/web or enable HTTPS.</span></div>';
+            scannerContainer.innerHTML = '<div class="scanner-error"><span class="error-icon">⚠️</span><span>Camera is blocked on insecure origins. Use http://127.0.0.1:5000/web or enable HTTPS.</span></div>';
+        }
+    }
+
+    showScannerError(message) {
+        const scannerContainer = document.getElementById('webcam-scanner-container');
+        if (scannerContainer) {
+            scannerContainer.innerHTML = `<div class="scanner-error"><span class="error-icon">❌</span><span>${message}</span></div>`;
+        }
+    }
+
+    showScanningStatus(isScanning) {
+        const qrBox = document.getElementById('qr-reader');
+        if (qrBox) {
+            if (isScanning) {
+                qrBox.classList.add('scanning');
+            } else {
+                qrBox.classList.remove('scanning');
+            }
+        }
+    }
+
+    showScanSuccess() {
+        const qrBox = document.getElementById('qr-reader');
+        if (qrBox) {
+            qrBox.classList.add('scan-success');
+            setTimeout(() => qrBox.classList.remove('scan-success'), 2000);
         }
     }
 
@@ -500,8 +538,8 @@ class RailwayQRApp {
         const scannerContainer = document.getElementById('webcam-scanner-container');
         if (scannerContainer) scannerContainer.style.display = 'block';
         // Bind controls
-        const startBtn = document.getElementById('start-scan-btn');
-        const stopBtn = document.getElementById('stop-scan-btn');
+        const startBtn = document.getElementById('start-scan');
+        const stopBtn = document.getElementById('stop-scan');
         const switchBtn = document.getElementById('switch-camera');
         if (startBtn && !startBtn._bound) { startBtn.addEventListener('click', () => this.startWebcamScanning()); startBtn._bound = true; }
         if (stopBtn && !stopBtn._bound) { stopBtn.addEventListener('click', () => this.stopWebcamScanning()); stopBtn._bound = true; }
@@ -561,8 +599,8 @@ class RailwayQRApp {
             await this.html5QrCode.start(selected, config, (decodedText) => {
                 this.handleWebcamScanSuccess(decodedText);
             });
-            const startBtn = document.getElementById('start-scan-btn');
-            const stopBtn = document.getElementById('stop-scan-btn');
+            const startBtn = document.getElementById('start-scan');
+            const stopBtn = document.getElementById('stop-scan');
             if (startBtn) startBtn.style.display = 'none';
             if (stopBtn) stopBtn.style.display = 'inline-block';
             const qrBox = document.getElementById('qr-reader');
@@ -581,8 +619,8 @@ class RailwayQRApp {
                 this.html5QrCode = null;
             }
         } catch (e) { console.warn('Stop error:', e); }
-        const startBtn = document.getElementById('start-scan-btn');
-        const stopBtn = document.getElementById('stop-scan-btn');
+        const startBtn = document.getElementById('start-scan');
+        const stopBtn = document.getElementById('stop-scan');
         if (startBtn) startBtn.style.display = 'inline-block';
         if (stopBtn) stopBtn.style.display = 'none';
         const qrBox = document.getElementById('qr-reader');
@@ -614,13 +652,19 @@ class RailwayQRApp {
 
     async processRailwayQRScan(qrRef, scanResult) {
         try {
+            console.log('Processing QR scan for ref:', qrRef);
             this.showProcessingStatus();
             const res = await fetch(`${this.apiBase}/lookup/${qrRef}`, { headers: { 'Authorization': `Bearer ${this.authToken}` } });
+            console.log('Lookup response status:', res.status);
+            
             if (res.ok) {
                 const itemData = await res.json();
+                console.log('Item data received:', itemData);
                 this.displayWebcamScanResults({ success: true, scan_result: scanResult, item_data: itemData, ai_insights: itemData.ai_insights || {}, scanned_by: this.currentUser && this.currentUser.name, scan_timestamp: new Date().toISOString() });
             } else {
-                this.displayScanError('QR code not found in database');
+                const errorData = await res.json().catch(() => ({}));
+                console.log('Lookup error:', errorData);
+                this.displayScanError(`QR code not found in database: ${errorData.error || 'Unknown error'}`);
             }
         } catch (e) {
             console.error('Process scan error:', e);
@@ -704,7 +748,26 @@ class RailwayQRApp {
         } catch (e) { /* ignore */ }
     }
 
-    logout() { localStorage.removeItem('railway_auth_token'); this.authToken = null; this.currentUser = null; this.showLogin(); }
+    updateUserInfo(user) {
+        const userInfo = document.querySelector('.user-info');
+        const username = document.querySelector('.username');
+        if (userInfo && username) {
+            username.textContent = user.name || user.username || user.role;
+            userInfo.style.display = 'flex';
+        }
+    }
+
+    logout() { 
+        localStorage.removeItem('railway_auth_token'); 
+        this.authToken = null; 
+        this.currentUser = null; 
+        this.showLogin(); 
+        // Hide user info
+        const userInfo = document.querySelector('.user-info');
+        if (userInfo) {
+            userInfo.style.display = 'none';
+        }
+    }
 }
 
 // Global helpers
