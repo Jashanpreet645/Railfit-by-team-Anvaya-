@@ -650,6 +650,12 @@ class RailwayQRApp {
                 qrBox.classList.remove('scanning');
             }
         }
+        // Update inline status helper
+        const status = this.ensureScanStatusEl();
+        if (status) {
+            status.textContent = isScanning ? 'Scanning... Hold the QR steady in the square.' : 'Scanner idle';
+            status.dataset.state = isScanning ? 'info' : 'idle';
+        }
     }
 
     showScanSuccess() {
@@ -673,6 +679,8 @@ class RailwayQRApp {
         if (startBtn && !startBtn._bound) { startBtn.addEventListener('click', () => this.startWebcamScanning()); startBtn._bound = true; }
         if (stopBtn && !stopBtn._bound) { stopBtn.addEventListener('click', () => this.stopWebcamScanning()); stopBtn._bound = true; }
         if (switchBtn && !switchBtn._bound) { switchBtn.addEventListener('click', () => this.switchCamera()); switchBtn._bound = true; }
+        // Ensure status element exists
+        this.ensureScanStatusEl();
         // Setup cameras
         this.setupWebcamScanner();
     }
@@ -708,6 +716,22 @@ class RailwayQRApp {
         }
     }
 
+    ensureScanStatusEl() {
+        const container = document.getElementById('webcam-scanner-container');
+        if (!container) return null;
+        let status = container.querySelector('.scanning-status');
+        if (!status) {
+            status = document.createElement('div');
+            status.className = 'scanning-status';
+            status.style.margin = '8px 0 0';
+            status.style.textAlign = 'center';
+            status.style.fontSize = '14px';
+            status.style.color = '#555';
+            container.appendChild(status);
+        }
+        return status;
+    }
+
     async startWebcamScanning() {
         const cameraSelect = document.getElementById('camera-select');
         const selected = cameraSelect && cameraSelect.value;
@@ -715,19 +739,50 @@ class RailwayQRApp {
         try {
             // Create or reuse scanner
             this.html5QrCode = new Html5Qrcode('qr-reader');
+            // Compute qrbox dynamically based on container width
+            const readerEl = document.getElementById('qr-reader');
+            const containerWidth = readerEl ? readerEl.clientWidth : 480;
+            const boxSize = Math.max(220, Math.min(460, Math.floor(containerWidth * 0.7)));
             const config = {
                 fps: 15,
-                qrbox: { width: 320, height: 320 },
-                aspectRatio: 1.333,
+                qrbox: { width: boxSize, height: boxSize },
+                aspectRatio: 1.777, // widescreen cameras common; content box remains square
                 disableFlip: false,
                 experimentalFeatures: { useBarCodeDetectorIfSupported: true }
             };
             if (window.Html5QrcodeSupportedFormats) {
                 config.formatsToSupport = [Html5QrcodeSupportedFormats.QR_CODE];
             }
-            await this.html5QrCode.start(selected, config, (decodedText) => {
-                this.handleWebcamScanSuccess(decodedText);
-            });
+            // Clear old status and start timer for no-detection hint
+            const status = this.ensureScanStatusEl();
+            if (status) { status.textContent = 'Scanning... Hold the QR steady in the square.'; status.dataset.state = 'info'; }
+            if (this.noDetectionTimer) { clearTimeout(this.noDetectionTimer); }
+            this.noDetectionTimer = setTimeout(() => {
+                const s = this.ensureScanStatusEl();
+                if (s && (!this.lastDecodedAt || Date.now() - this.lastDecodedAt > 5000)) {
+                    s.textContent = 'No QR detected yet. Tips: Improve lighting, fill the square with the QR, avoid glare.';
+                    s.dataset.state = 'warn';
+                }
+            }, 8000);
+
+            await this.html5QrCode.start(
+                selected,
+                config,
+                (decodedText) => {
+                    this.lastDecodedAt = Date.now();
+                    this.handleWebcamScanSuccess(decodedText);
+                },
+                (errorMessage, errorObject) => {
+                    // Frequent decode failures are normal; show lightweight feedback occasionally
+                    if (!this._lastErrorShownAt || Date.now() - this._lastErrorShownAt > 2000) {
+                        const s = this.ensureScanStatusEl();
+                        if (s && (!s.dataset.state || s.dataset.state === 'info')) {
+                            s.textContent = 'Scanning...';
+                        }
+                        this._lastErrorShownAt = Date.now();
+                    }
+                }
+            );
             const startBtn = document.getElementById('start-scan');
             const stopBtn = document.getElementById('stop-scan');
             if (startBtn) startBtn.style.display = 'none';
@@ -737,7 +792,15 @@ class RailwayQRApp {
             this.showScanningStatus(true);
         } catch (e) {
             console.error('Error starting scanner:', e);
-            this.showScannerError(`Failed to start camera: ${e.message}`);
+            let message = 'Failed to start camera.';
+            if (e && typeof e === 'object') {
+                const msg = e.message || String(e);
+                if (/NotAllowedError|Permission/i.test(msg)) message = 'Camera permission denied. Please allow camera access in your browser.';
+                else if (/NotFoundError|no camera|no cameras/i.test(msg)) message = 'No camera found. Connect a camera or check permissions.';
+                else if (/overconstrained|resolution/i.test(msg)) message = 'Camera constraints not supported by device. Try another camera or lower resolution.';
+                else message = `Camera error: ${msg}`;
+            }
+            this.showScannerError(message);
         }
     }
 
@@ -755,6 +818,7 @@ class RailwayQRApp {
         const qrBox = document.getElementById('qr-reader');
         if (qrBox) qrBox.classList.remove('scanning');
         this.showScanningStatus(false);
+        if (this.noDetectionTimer) { clearTimeout(this.noDetectionTimer); this.noDetectionTimer = null; }
     }
 
     async switchCamera() {
